@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Product;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 
 class ProductController extends Controller
 {
@@ -12,10 +13,19 @@ class ProductController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        // Mengambil semua data produk
-        return Product::all();
+        // Mendapatkan parameter halaman dan batas per halaman dari query string
+        $perPage = $request->input('per_page', 10); // Default 15 item per halaman
+        $page = $request->input('page', 1); // Default halaman pertama
+
+        // Mengambil data produk dengan paginasi
+        $products = Product::select('id', 'product_name', 'category', 'price', 'discount') // Pilih kolom yang diperlukan
+            ->orderBy('created_at', 'desc') // Urutkan data, bisa disesuaikan
+            ->paginate($perPage, ['*'], 'page', $page);
+
+        // Mengembalikan data produk dalam format JSON
+        return response()->json($products);
     }
 
     /**
@@ -26,23 +36,37 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // Validasi data yang diterima
-        $request->validate([
-            'product_name' => 'required|max:150',
-            'category' => 'required|max:100',
-            'price' => 'required|numeric',
-        ]);
+        try {
+            // Validasi data yang diterima
+            $request->validate([
+                'product_name' => 'required|max:150|min:2|unique:products,product_name',
+                'category' => 'required|max:100',
+                'price' => 'required|numeric',
+                'discount' => 'nullable|numeric|min:0|max:100',
+            ]);
 
-        // Membuat produk baru
-        $product = Product::create($request->all());
+            // Membuat produk baru
+            $product = Product::create($request->all());
 
-        // Mengembalikan data produk yang baru dibuat
-        return response()->json($product, 201);
+            // Mengembalikan data produk yang baru dibuat
+            return response()->json($product, 201);
+        } catch (ValidationException $e) {
+            // Mengembalikan pesan kesalahan validasi dalam bentuk JSON
+            return response()->json([
+                'errors' => $e->errors()
+            ], 422); // Status kode 422 Unprocessable Entity
+        } catch (\Exception $e) {
+            // Mengembalikan pesan kesalahan umum dalam bentuk JSON
+            return response()->json([
+                'error' => 'Terjadi kesalahan saat menyimpan produk. Silakan coba lagi.'
+            ], 500); // Status kode 500 Internal Server Error
+        }
     }
+
 
     /**
      * Display the specified resource.
-     *
+     *  
      * @param  \App\Models\Product  $product
      * @return \Illuminate\Http\Response
      */
@@ -61,18 +85,31 @@ class ProductController extends Controller
      */
     public function update(Request $request, Product $product)
     {
-        // Validasi data yang diterima
-        $request->validate([
-            'product_name' => 'sometimes|required|max:150',
-            'category' => 'sometimes|required|max:100',
-            'price' => 'sometimes|required|numeric',
-        ]);
+        try {
+            // Validasi data yang diterima
+            $request->validate([
+                'product_name' => 'required|max:150|min:0|unique:products,product_name',
+                'category' => 'required|max:100',
+                'price' => 'required|numeric|min:0',
+                'discount' => 'nullable|numeric|min:0|max:100',
+            ]);
 
-        // Memperbarui data produk
-        $product->update($request->all());
+            // Membuat produk baru
+            $product = Product::create($request->all());
 
-        // Mengembalikan data produk yang telah diperbarui
-        return response()->json($product);
+            // Mengembalikan data produk yang baru dibuat
+            return response()->json($product, 201);
+        } catch (ValidationException $e) {
+            // Mengembalikan pesan kesalahan validasi dalam bentuk JSON
+            return response()->json([
+                'errors' => $e->errors()
+            ], 422); // Status kode 422 Unprocessable Entity
+        } catch (\Exception $e) {
+            // Mengembalikan pesan kesalahan umum dalam bentuk JSON
+            return response()->json([
+                'error' => 'Terjadi kesalahan saat menyimpan produk. Silakan coba lagi.'
+            ], 500); // Status kode 500 Internal Server Error
+        }
     }
 
     /**

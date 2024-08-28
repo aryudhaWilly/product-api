@@ -15,7 +15,13 @@ use App\Http\Controllers\ProductController;
 |
 */
 
-Route::apiResource('products', ProductController::class);
+Route::middleware('auth.token')->group(function () {
+    Route::get('/products', [ProductController::class, 'index']);
+    Route::post('/products', [ProductController::class, 'store']);
+    Route::post('/products', [ProductController::class, 'show']);
+    Route::post('/products', [ProductController::class, 'update']);
+    Route::post('/products', [ProductController::class, 'destroy']);
+});
 
 
 Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
