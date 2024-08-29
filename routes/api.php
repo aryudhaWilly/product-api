@@ -16,11 +16,11 @@ use App\Http\Controllers\ProductController;
 */
 
 Route::middleware('auth.token')->group(function () {
-    Route::get('/products', [ProductController::class, 'index']);
-    Route::post('/products', [ProductController::class, 'store']);
-    Route::post('/products', [ProductController::class, 'show']);
-    Route::post('/products', [ProductController::class, 'update']);
-    Route::post('/products', [ProductController::class, 'destroy']);
+    Route::get('/products', [ProductController::class, 'index']);  // List products
+    Route::post('/products', [ProductController::class, 'store']);  // Create product
+    Route::get('/products/{id}', [ProductController::class, 'show']);  // Get a single product
+    Route::put('/products/{id}', [ProductController::class, 'update']);  // Update product
+    Route::delete('/products/{id}', [ProductController::class, 'destroy']);  // Delete product
 });
 
 
